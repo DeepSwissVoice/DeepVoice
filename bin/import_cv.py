@@ -23,36 +23,31 @@ FIELDNAMES = ['wav_filename', 'wav_filesize', 'transcript']
 SAMPLE_RATE = 16000
 MAX_SECS = 10
 ARCHIVE_DIR_NAME = 'cv_corpus_v1'
-ARCHIVE_NAME = ARCHIVE_DIR_NAME + '.tar.gz'
-ARCHIVE_URL = 'https://s3.us-east-2.amazonaws.com/common-voice-data-download/' + ARCHIVE_NAME
+''' ARCHIVE_NAME = ARCHIVE_DIR_NAME + '.tar.gz' ''' #anpassen!
 
 def _download_and_preprocess_data(target_dir):
     # Making path absolute
     target_dir = path.abspath(target_dir)
     # Conditionally download data
-    archive_path = _maybe_download(ARCHIVE_NAME, target_dir, ARCHIVE_URL)
+    #not realy needed... just to check for the dir
+    archive_path = _maybe_download(ARCHIVE_NAME, target_dir)
     # Conditionally extract common voice data
-    _maybe_extract(target_dir, ARCHIVE_DIR_NAME, archive_path)
+    #is not needed due to using other data
+        #_maybe_extract(target_dir, ARCHIVE_DIR_NAME, archive_path)
     # Conditionally convert common voice CSV files and mp3 data to DeepSpeech CSVs and wav
     _maybe_convert_sets(target_dir, ARCHIVE_DIR_NAME)
 
-def _maybe_download(archive_name, target_dir, archive_url):
+def _maybe_download(archive_name, target_dir):
     # If archive file does not exist, download it...
     archive_path = path.join(target_dir, archive_name)
     if not path.exists(archive_path):
-        print('No archive "%s" - downloading...' % archive_path)
-        req = requests.get(archive_url, stream=True)
-        total_size = int(req.headers.get('content-length', 0))
-        done = 0
-        with open(archive_path, 'wb') as f:
-            for data in req.iter_content(1024*1024):
-                done += len(data)
-                f.write(data)
-                print_progress(done, total_size)
+        print('couldn\'t find directory')
     else:
-        print('Found archive "%s" - not downloading.' % archive_path)
+        print('Found archive "%s" ' % archive_path)
     return archive_path
 
+#we do not need to extract data - is done manualy
+'''
 def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = path.join(target_dir, extracted_data)
@@ -65,6 +60,7 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
                 tar.extract(member, path=target_dir)
     else:
         print('Found directory "%s" - not extracting it from archive.' % archive_path)
+'''
 
 def _maybe_convert_sets(target_dir, extracted_data):
     extracted_dir = path.join(target_dir, extracted_data)
@@ -111,8 +107,8 @@ def _maybe_convert_set(extracted_dir, source_csv, target_csv):
             counter['all'] += 1
 
     print('Importing mp3 files...')
-    pool = Pool(cpu_count())
-    pool.map(one_sample, samples)
+    pool = Pool(cpu_count()) #multi cpu
+    pool.map(one_sample, samples) #function one_sample wird aufgeruft und mit samples auf multi cpu verteilen
     pool.close()
     pool.join()
 
